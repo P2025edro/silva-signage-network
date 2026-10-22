@@ -21,7 +21,9 @@ test('three-business network: each screen carries the other two businesses', () 
   const shop = campaign({ id: 'c-shop', companyId: 'company-c', advertiserCategoryId: CAT.grocery });
   const all = [barber, food, shop];
   const ids = (companyId: string) =>
-    buildScreenPlaylist(screen({ screenId: `s-${companyId}`, companyId }), all, policy(), NOW).items.map((i) => i.campaignId).sort();
+    buildScreenPlaylist(screen({ screenId: `s-${companyId}`, companyId }), all, policy(), NOW)
+      .items.map((i) => i.campaignId)
+      .sort();
   assert.deepEqual(ids('company-a'), ['c-food', 'c-shop']);
   assert.deepEqual(ids('company-b'), ['c-barber', 'c-shop']);
   assert.deepEqual(ids('company-c'), ['c-barber', 'c-food']);
@@ -39,7 +41,10 @@ test('paused and expired campaigns are not included in newly generated playlists
   const paused = campaign({ id: 'paused', status: 'PAUSED', companyId: 'company-c' });
   const expired = campaign({ id: 'expired', endAt: new Date('2026-07-10T00:00:00Z'), companyId: 'company-d' });
   const p = buildScreenPlaylist(screen(), [live, paused, expired], policy(), NOW);
-  assert.deepEqual(p.items.map((i) => i.campaignId), ['live']);
+  assert.deepEqual(
+    p.items.map((i) => i.campaignId),
+    ['live'],
+  );
 });
 
 test('playlist expires at the next quarter hour or campaign end, whichever is first', () => {
@@ -81,7 +86,13 @@ test('video duration comes from the media; images use display seconds', () => {
 
 test('creatives rotate across quarter hours when slots are fewer than creatives', () => {
   const media = ['m1', 'm2', 'm3'].map((id, position) => ({
-    id, kind: 'IMAGE' as const, status: 'READY' as const, displaySeconds: 10, durationMs: null, videoCodec: null, position,
+    id,
+    kind: 'IMAGE' as const,
+    status: 'READY' as const,
+    displaySeconds: 10,
+    durationMs: null,
+    videoCodec: null,
+    position,
   }));
   // Two advertisers so the creative-carrying campaign is capped below 3 slots
   const many = campaign({ id: 'many', media, priority: 1 });

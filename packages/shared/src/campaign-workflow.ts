@@ -9,16 +9,7 @@ import type { CampaignStatus } from './engine/types.js';
  * APPROVED is transient: approval immediately resolves to SCHEDULED, ACTIVE,
  * or (if the end date has passed) is refused.
  */
-export type CampaignAction =
-  | 'SUBMIT'
-  | 'START_REVIEW'
-  | 'APPROVE'
-  | 'REJECT'
-  | 'REQUEST_CHANGES'
-  | 'PAUSE'
-  | 'RESUME'
-  | 'CANCEL'
-  | 'SYSTEM_TICK';
+export type CampaignAction = 'SUBMIT' | 'START_REVIEW' | 'APPROVE' | 'REJECT' | 'REQUEST_CHANGES' | 'PAUSE' | 'RESUME' | 'CANCEL' | 'SYSTEM_TICK';
 
 export type ActorKind = 'OWNER' | 'STAFF' | 'SILVA';
 

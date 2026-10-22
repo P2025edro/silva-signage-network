@@ -52,9 +52,7 @@ export function campaign(overrides: Partial<CampaignCandidate> = {}): CampaignCa
     targetZoneIds: [],
     targetVenueCategoryIds: [],
     excludedVenueCategoryIds: [],
-    media: [
-      { id: `${id}-img1`, kind: 'IMAGE', status: 'READY', displaySeconds: 15, durationMs: null, videoCodec: null, position: 0 },
-    ],
+    media: [{ id: `${id}-img1`, kind: 'IMAGE', status: 'READY', displaySeconds: 15, durationMs: null, videoCodec: null, position: 0 }],
     ...overrides,
   };
 }

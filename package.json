@@ -2,15 +2,44 @@
   "name": "silva-signage-network",
   "private": true,
   "version": "0.1.0",
-  "description": "Silva Signage Network — indoor DOOH advertising network by Silva Solutions Ltd",
+  "description": "Silva Signage Network \u2014 indoor DOOH advertising network by Silva Solutions Ltd",
+  "type": "module",
   "packageManager": "pnpm@10.0.0",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
+    "dev:api": "pnpm --filter @silva/api dev",
+    "dev:web": "pnpm --filter @silva/web dev",
+    "dev:player": "pnpm --filter @silva/tv-player dev",
+    "build": "pnpm -r build",
     "db:migrate": "bash packages/database/scripts/migrate.sh",
     "db:migrate:test": "DATABASE_URL=$TEST_DATABASE_URL bash packages/database/scripts/migrate.sh",
-    "test:unit": "tsx --test packages/shared/test/*.test.ts",
-    "typecheck": "tsc -p packages/shared/tsconfig.json --noEmit"
+    "db:seed": "pnpm --filter @silva/api seed",
+    "test:unit": "pnpm --filter @silva/shared test",
+    "test:integration": "pnpm --filter @silva/api test",
+    "test:e2e": "bash tests/e2e/reset-e2e-db.sh && playwright test -c tests/e2e/playwright.config.ts",
+    "test": "pnpm test:unit && pnpm test:db && pnpm test:integration",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test:db": "psql \"$TEST_DATABASE_URL\" -v ON_ERROR_STOP=1 -f packages/database/test/constraints.sql",
+    "dev": "pnpm --parallel --filter @silva/api --filter @silva/web --filter @silva/tv-player dev"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@playwright/test": "1.56.0",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.20.0",
+    "prettier": "^3.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.0",
+    "typescript-eslint": "^8.20.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ]
   }
 }

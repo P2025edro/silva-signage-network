@@ -1,31 +1,43 @@
-# Status — 22 Oct 2026
+# Status — Milestone 1 (22 Oct 2026)
 
-## Blocker
+Milestone 1 is implemented and verified in a development environment. The defining scenario runs end to end through the real UI, API, database and TV player: **Company A uploads an advert, Silva approves it, and it plays on Company B's paired screen**, with playback reported back to A. It is ready for local demonstration and for planning a controlled pilot; it is **not** production-ready (see `KNOWN_LIMITATIONS.md`).
 
-The build environment cannot reach the npm registry (outbound connection to `registry.npmjs.org` refused by network policy). The specified stack — Fastify, Vite, a PostgreSQL driver, Drizzle, TanStack Query, React Hook Form, Stripe SDK — can't be installed, so the API, web app and TV player cannot be built or tested here yet. **Fix:** allow npm (package managers) for this Claude account in claude.ai → Settings → Capabilities, or run the build on a machine with normal npm access.
+## Acceptance criteria (brief §20)
 
-## Done and verified
+| # | Criterion | Status | Evidence |
+|---|---|---|---|
+| 1 | Silva admin signs in securely | ✅ | scrypt, sessions, MFA enforced for super admins — `security.test.ts`, E2E |
+| 2 | Admin creates two independent companies | ✅ | E2E step 1 |
+| 3 | Each company manages its own profile | ✅ | `PATCH /companies/:id` (owner-only), portal Settings |
+| 4 | Two establishments registered | ✅ | E2E steps 2 and 4 |
+| 5 | Two TV players paired independently | ✅ | `network-flow.test.ts` (A and B screens); E2E pairs via the real player |
+| 6 | Each player receives its own authorised configuration | ✅ | `/device/config` per token; device-scope test |
+| 7 | Customer uploads a valid advert | ✅ | E2E upload; validation tests |
+| 8 | Campaign enters the approval workflow | ✅ | E2E submit; state machine tests |
+| 9 | Admin approves | ✅ | E2E approve |
+| 10 | Engine finds an eligible screen of another company | ✅ | integration + engine tests (`OWN_SCREEN` excluded) |
+| 11 | Advert appears on that screen | ✅ | E2E: TV displays the 1920×1080 advert (screenshot) |
+| 12 | Playback events recorded | ✅ | E2E report shows starts; idempotency/forgery tests |
+| 13 | Admin monitors device status | ✅ | heartbeat → health states; Smart TVs page |
+| 14 | No cross-tenant access | ✅ | 10 endpoints + writes tested; E2E 404s |
+| 15 | Entitlements restrict distribution | ✅ | screens, campaigns, length, zones, quota, subscription tests |
+| 16 | Expired and paused campaigns leave new playlists | ✅ | integration + engine tests |
+| 17 | Critical backend operations tested | ✅ | 44 unit, 10 DB, 41 integration, 5 E2E — all passing |
+| 18 | Runs locally from documented instructions | ✅ | `README.md` |
+| 19 | Production configuration documented | ✅ | `DEPLOYMENT.md` (not deployed) |
+| 20 | Hardware limits and unimplemented features listed | ✅ | `KNOWN_LIMITATIONS.md` |
 
-| Item | Verification |
-|---|---|
-| Monorepo skeleton, env template, docker-compose (Postgres + MinIO) | Files present; compose not run here (no image pulls) |
-| Full schema: 33 tables incl. tenancy, devices, pairing, plans/entitlements, subscriptions, billing events, campaigns, media, playlists, allocations, playback, audit, settings | Applied to real PostgreSQL 16 (dev + test DBs) |
-| Reference data: business categories, 7 configurable Dublin zones, 3 draft plans (flagged `price_is_draft`), platform settings | Applied |
-| Migration runner (checksummed, transactional, idempotent) | Ran twice: second run no-op |
-| DB integrity tests (10): screen/location company match, unverified coordinates rejected, append-only audit log, one live subscription per company, Stripe subscriptions need provider id, date ordering, single live pairing code, lowercase emails | **10/10 pass** |
-| Distribution engine: eligibility, competition rules, allocation, anti-monopoly cap, playlist versioning, capacity/shortfall | **44/44 unit tests pass**, strict typecheck clean |
-| Campaign approval state machine | Included in the 44 tests |
-| Dublin time handling incl. both DST transition nights | Included in the 44 tests |
+## Beyond Milestone 1 already in place
 
-## Not started (requires npm access)
+Stripe webhook processing (verified, idempotent) and plan management; admin analytics with CSV; alerts; audit log viewer; geographic zones; host competition rules and advertiser exclusions; campaign capacity/shortfall; campaign scheduler and retention worker; dark mode.
 
-API (auth, MFA, RBAC, pairing, upload validation, playlists, playback ingestion, OpenAPI), web dashboard and portal, TV player, integration tests, Playwright E2E, seed/demo, Stripe.
+## Blockers / needs from Silva Solutions
 
-## Commands that work now
+1. **Real TVs** to test (one Samsung, one LG, one Android TV) — required before claiming compatibility.
+2. **Hosting decisions and accounts** (API host, managed Postgres in the EU, S3 bucket, domains `app.` / `api.` / `player.silvasolutions.ie`). Nothing purchased or deployed.
+3. **Stripe account**, approved prices (current €29/€59/€99 are draft examples), VAT advice.
+4. **Contracts and policies**: establishment agreement, advertiser terms, privacy notice, retention policy (`SECURITY.md` checklist).
 
-```bash
-DATABASE_URL=postgres://silva:silva_dev@localhost:5432/silva_signage pnpm db:migrate
-psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f packages/database/test/constraints.sql
-pnpm test:unit      # tsx --test packages/shared/test/*.test.ts
-pnpm typecheck
-```
+## Suggested next steps
+
+Password reset and invitation emails → TV hardware testing → deploy a staging environment → Stripe test-mode end-to-end → pilot with 2–3 Dublin businesses.

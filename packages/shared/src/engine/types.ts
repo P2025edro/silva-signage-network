@@ -8,17 +8,7 @@
  */
 
 export type CampaignStatus =
-  | 'DRAFT'
-  | 'SUBMITTED'
-  | 'UNDER_REVIEW'
-  | 'CHANGES_REQUESTED'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'SCHEDULED'
-  | 'ACTIVE'
-  | 'PAUSED'
-  | 'COMPLETED'
-  | 'CANCELLED';
+  'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED' | 'SCHEDULED' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
 
 export type SubscriptionStatus = 'INCOMPLETE' | 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'UNPAID';
 export type AccountStatus = 'ACTIVE' | 'SUSPENDED' | 'PENDING';
@@ -119,11 +109,7 @@ export const DEFAULT_POLICY: DistributionPolicy = {
 };
 
 export type ScreenIneligibilityReason =
-  | 'SCREEN_NOT_ACTIVE'
-  | 'HOST_SUSPENDED'
-  | 'HOST_SUBSCRIPTION_INACTIVE'
-  | 'LOCATION_NOT_PARTICIPATING'
-  | 'LOCATION_CLOSED';
+  'SCREEN_NOT_ACTIVE' | 'HOST_SUSPENDED' | 'HOST_SUBSCRIPTION_INACTIVE' | 'LOCATION_NOT_PARTICIPATING' | 'LOCATION_CLOSED';
 
 export type CampaignIneligibilityReason =
   | 'CAMPAIGN_NOT_APPROVED'

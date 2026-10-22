@@ -35,17 +35,11 @@ export interface AllocationResult {
   order: string[];
 }
 
-export function allocateLoop(
-  candidates: AllocationCandidate[],
-  slotsPerLoop: number,
-  maxAdvertiserShare: number,
-): AllocationResult {
+export function allocateLoop(candidates: AllocationCandidate[], slotsPerLoop: number, maxAdvertiserShare: number): AllocationResult {
   if (!Number.isInteger(slotsPerLoop) || slotsPerLoop < 1) throw new Error('slotsPerLoop must be a positive integer');
   if (!(maxAdvertiserShare > 0 && maxAdvertiserShare <= 1)) throw new Error('maxAdvertiserShare must be in (0, 1]');
 
-  const ranked = [...candidates].sort(
-    (a, b) => a.deliveryRatio - b.deliveryRatio || b.weight - a.weight || a.campaignId.localeCompare(b.campaignId),
-  );
+  const ranked = [...candidates].sort((a, b) => a.deliveryRatio - b.deliveryRatio || b.weight - a.weight || a.campaignId.localeCompare(b.campaignId));
   const selected = ranked.slice(0, slotsPerLoop);
   const displaced = ranked.slice(slotsPerLoop).map((c) => c.campaignId);
 
@@ -72,10 +66,7 @@ export function allocateLoop(
       if (advSlots >= capFor(guaranteedByAdvertiser.get(c.advertiserId)!)) continue;
       const s = slots.get(c.campaignId)!;
       const quotient = c.weight / (2 * s + 1);
-      if (
-        quotient > bestQuotient ||
-        (quotient === bestQuotient && best !== null && c.campaignId.localeCompare(best.campaignId) < 0)
-      ) {
+      if (quotient > bestQuotient || (quotient === bestQuotient && best !== null && c.campaignId.localeCompare(best.campaignId) < 0)) {
         best = c;
         bestQuotient = quotient;
       }

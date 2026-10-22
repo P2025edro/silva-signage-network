@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en-IE">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Silva Signage Network</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        color: #fff;
+        overflow: hidden;
+        cursor: none;
+        font-family: -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      }
+      #stage {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #000;
+      }
+      .layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #000;
+        opacity: 0;
+        transition: opacity 400ms linear;
+      }
+      .layer.on {
+        opacity: 1;
+      }
+      /* 5% safe area for TV overscan */
+      .panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 5vh 5vw;
+        box-sizing: border-box;
+        text-align: center;
+        background: radial-gradient(circle at 30% 20%, #12382d 0%, #08140f 60%, #050a08 100%);
+      }
+      .panel.on {
+        display: flex;
+      }
+      .mark {
+        width: 9vh;
+        height: 9vh;
+        margin-bottom: 3vh;
+      }
+      .brand {
+        font-size: 3.2vh;
+        letter-spacing: 0.02em;
+        color: #b9e8d5;
+        margin: 0 0 6vh;
+        font-weight: 600;
+      }
+      .code {
+        font-size: 15vh;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        font-variant-numeric: tabular-nums;
+        margin: 2vh 0;
+        color: #fff;
+      }
+      .lead {
+        font-size: 3.6vh;
+        margin: 0;
+        color: #e8f3ee;
+      }
+      .small {
+        font-size: 2.4vh;
+        color: #9fb8ad;
+        margin: 2vh 0 0;
+        max-width: 70vw;
+        line-height: 1.4;
+      }
+      .tagline {
+        font-size: 5vh;
+        font-weight: 600;
+        margin: 0;
+      }
+      #status {
+        position: fixed;
+        right: 2vw;
+        bottom: 2vh;
+        font-size: 1.6vh;
+        color: rgba(255, 255, 255, 0.45);
+        display: none;
+      }
+      #status.on {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <img id="imgA" class="layer" alt="" />
+      <img id="imgB" class="layer" alt="" />
+      <video id="video" class="layer" muted playsinline preload="auto"></video>
+
+      <section id="pairing" class="panel" aria-live="polite">
+        <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="7" fill="#5fd3a6" />
+          <rect x="7" y="9" width="18" height="11" rx="1.5" fill="none" stroke="#062018" stroke-width="2" />
+          <path d="M13 24h6" stroke="#062018" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <p class="brand">Silva Signage Network</p>
+        <p class="lead">Pair this screen</p>
+        <div id="code" class="code">····-····</div>
+        <p id="pairHelp" class="small"></p>
+        <p id="pairExpiry" class="small"></p>
+      </section>
+
+      <section id="fallback" class="panel">
+        <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="7" fill="#5fd3a6" />
+          <rect x="7" y="9" width="18" height="11" rx="1.5" fill="none" stroke="#062018" stroke-width="2" />
+          <path d="M13 24h6" stroke="#062018" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <p class="brand">Silva Signage Network</p>
+        <p class="tagline">Local businesses. Local screens.</p>
+        <p id="fallbackNote" class="small"></p>
+      </section>
+
+      <section id="message" class="panel">
+        <p class="brand">Silva Signage Network</p>
+        <p id="messageText" class="lead"></p>
+      </section>
+    </div>
+    <div id="status"></div>
+    <script src="player.js"></script>
+  </body>
+</html>

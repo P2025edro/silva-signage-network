@@ -20,11 +20,7 @@ export function isSubscriptionActive(sub: SubscriptionSnapshot | null, now: Date
 }
 
 /** Checks that apply to the screen regardless of which campaign is considered. */
-export function screenIneligibility(
-  screen: ScreenContext,
-  policy: DistributionPolicy,
-  now: Date,
-): ScreenIneligibilityReason[] {
+export function screenIneligibility(screen: ScreenContext, policy: DistributionPolicy, now: Date): ScreenIneligibilityReason[] {
   const reasons: ScreenIneligibilityReason[] = [];
   if (screen.screenStatus !== 'ACTIVE') reasons.push('SCREEN_NOT_ACTIVE');
   if (screen.hostStatus !== 'ACTIVE') reasons.push('HOST_SUSPENDED');
@@ -35,11 +31,7 @@ export function screenIneligibility(
 }
 
 /** Media this screen can play, in campaign order. */
-export function compatibleMedia(
-  campaign: CampaignCandidate,
-  screen: ScreenContext,
-  policy: DistributionPolicy,
-): MediaCandidate[] {
+export function compatibleMedia(campaign: CampaignCandidate, screen: ScreenContext, policy: DistributionPolicy): MediaCandidate[] {
   return campaign.media
     .filter((m) => {
       if (m.status !== 'READY') return false;
@@ -86,10 +78,7 @@ export function campaignIneligibility(
   if (campaign.targetZoneIds.length > 0 && !campaign.targetZoneIds.some((z) => screen.zoneIds.includes(z))) {
     reasons.push('ZONE_MISMATCH');
   }
-  if (
-    campaign.targetVenueCategoryIds.length > 0 &&
-    (screen.venueCategoryId === null || !campaign.targetVenueCategoryIds.includes(screen.venueCategoryId))
-  ) {
+  if (campaign.targetVenueCategoryIds.length > 0 && (screen.venueCategoryId === null || !campaign.targetVenueCategoryIds.includes(screen.venueCategoryId))) {
     reasons.push('VENUE_CATEGORY_NOT_TARGETED');
   }
   if (screen.venueCategoryId !== null && campaign.excludedVenueCategoryIds.includes(screen.venueCategoryId)) {

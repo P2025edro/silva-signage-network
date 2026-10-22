@@ -28,7 +28,7 @@ test('one advertiser cannot monopolise the loop when others are eligible', () =>
   assert.ok(uncapped.slots.get('big')! / total(uncapped.slots) > 0.8);
 });
 
-test('cap applies across all of one advertiser\'s campaigns', () => {
+test("cap applies across all of one advertiser's campaigns", () => {
   const r = allocateLoop([cand('a1', 'A', 10), cand('a2', 'A', 10), cand('a3', 'A', 10), cand('b', 'B', 1)], 12, 0.4);
   const aSlots = r.slots.get('a1')! + r.slots.get('a2')! + r.slots.get('a3')!;
   // floor(12 × 0.4) = 4 → advertiser A keeps at most 4 of the original 12 (before compression)
@@ -57,7 +57,13 @@ test('a lone campaign is not repeated needlessly, but keeps all its creatives', 
 });
 
 test('smooth ordering spreads repeated campaigns apart', () => {
-  const order = smoothWeightedOrder(new Map([['a', 3], ['b', 1], ['c', 2]]));
+  const order = smoothWeightedOrder(
+    new Map([
+      ['a', 3],
+      ['b', 1],
+      ['c', 2],
+    ]),
+  );
   assert.equal(order.length, 6);
   for (let i = 1; i < order.length; i++) {
     if (order[i] === 'a') assert.notEqual(order[i - 1], 'a', `adjacent a at ${i}: ${order.join(',')}`);

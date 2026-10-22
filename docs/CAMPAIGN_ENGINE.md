@@ -39,3 +39,11 @@ Then every campaign is checked; **all** failing reasons are recorded on the play
 ## Capacity
 
 `estimateDailyPlays(slotsInLoop, loopSeconds, openingHours, weekday)` and `deliveryShortfall(requested, estimated)` give a planning estimate. It is not a delivery promise and says nothing about audience — a completed playback means the player reported it, not that a person saw it.
+
+## Where it runs
+
+`apps/api/src/services/playlists.ts` loads the snapshot (one query for campaigns with their subscription, quota usage, targeting and media; one for screens with zones and host rules), calls `buildScreenPlaylist` per screen, and persists a new version only when the content fingerprint changes. Each version stores the engine's per-campaign decisions, shown to Silva staff in *Advertising network* and *Smart TVs*.
+
+## Playback event types
+
+The player reports `STARTED`, `COMPLETED` and `FAILED`. `SCHEDULED` exists in the schema but is not emitted by the current player — what was scheduled is recorded as `delivery_allocations` per playlist version instead, which keeps event volume proportional to actual plays. Quotas count `STARTED` events within the advertiser's current subscription period.

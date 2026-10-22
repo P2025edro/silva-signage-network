@@ -22,12 +22,7 @@ function itemSeconds(m: MediaCandidate): number {
  * Builds one screen's playlist from a snapshot of candidate campaigns.
  * Pure: the same inputs (including `now`) always produce the same playlist.
  */
-export function buildScreenPlaylist(
-  screen: ScreenContext,
-  campaigns: CampaignCandidate[],
-  policy: DistributionPolicy,
-  now: Date,
-): GeneratedPlaylist {
+export function buildScreenPlaylist(screen: ScreenContext, campaigns: CampaignCandidate[], policy: DistributionPolicy, now: Date): GeneratedPlaylist {
   const screenReasons = screenIneligibility(screen, policy, now);
   let validUntil = nextQuarterHour(now);
 
@@ -108,12 +103,7 @@ export function buildScreenPlaylist(
  * An estimate for capacity planning, not a delivery promise: real delivery
  * depends on the TV being on and the player running.
  */
-export function estimateDailyPlays(args: {
-  slotsInLoop: number;
-  loopSeconds: number;
-  openingHours: OpeningHours | null;
-  isoWeekday: number;
-}): number {
+export function estimateDailyPlays(args: { slotsInLoop: number; loopSeconds: number; openingHours: OpeningHours | null; isoWeekday: number }): number {
   if (args.loopSeconds <= 0 || args.slotsInLoop <= 0) return 0;
   const openSeconds = openMinutesOnDay(args.openingHours, args.isoWeekday) * 60;
   return Math.floor((openSeconds / args.loopSeconds) * args.slotsInLoop);

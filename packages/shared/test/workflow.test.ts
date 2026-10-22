@@ -20,12 +20,21 @@ test('approval before the start date schedules the campaign', () => {
 });
 
 test('businesses cannot approve their own campaigns; staff cannot submit', () => {
-  assert.throws(() => next({ action: 'APPROVE', actor: 'OWNER', current: 'SUBMITTED' }), (e: WorkflowError) => e.code === 'FORBIDDEN');
-  assert.throws(() => next({ action: 'SUBMIT', actor: 'STAFF', current: 'DRAFT' }), (e: WorkflowError) => e.code === 'FORBIDDEN');
+  assert.throws(
+    () => next({ action: 'APPROVE', actor: 'OWNER', current: 'SUBMITTED' }),
+    (e: WorkflowError) => e.code === 'FORBIDDEN',
+  );
+  assert.throws(
+    () => next({ action: 'SUBMIT', actor: 'STAFF', current: 'DRAFT' }),
+    (e: WorkflowError) => e.code === 'FORBIDDEN',
+  );
 });
 
 test('rejection and change requests need a reason', () => {
-  assert.throws(() => next({ action: 'REJECT', actor: 'SILVA', current: 'UNDER_REVIEW' }), (e: WorkflowError) => e.code === 'REASON_REQUIRED');
+  assert.throws(
+    () => next({ action: 'REJECT', actor: 'SILVA', current: 'UNDER_REVIEW' }),
+    (e: WorkflowError) => e.code === 'REASON_REQUIRED',
+  );
   assert.equal(next({ action: 'REJECT', actor: 'SILVA', current: 'UNDER_REVIEW', reason: 'Unlicensed music' }), 'REJECTED');
   assert.equal(next({ action: 'REQUEST_CHANGES', actor: 'SILVA', current: 'SUBMITTED', reason: 'Logo is cropped' }), 'CHANGES_REQUESTED');
   assert.equal(next({ action: 'SUBMIT', actor: 'OWNER', current: 'CHANGES_REQUESTED' }), 'SUBMITTED');
@@ -38,15 +47,30 @@ test('pause and resume', () => {
 });
 
 test('invalid transitions are refused', () => {
-  assert.throws(() => next({ action: 'APPROVE', actor: 'SILVA', current: 'DRAFT' }), (e: WorkflowError) => e.code === 'INVALID_TRANSITION');
-  assert.throws(() => next({ action: 'PAUSE', actor: 'SILVA', current: 'REJECTED' }), (e: WorkflowError) => e.code === 'INVALID_TRANSITION');
-  assert.throws(() => next({ action: 'CANCEL', actor: 'SILVA', current: 'COMPLETED' }), (e: WorkflowError) => e.code === 'INVALID_TRANSITION');
+  assert.throws(
+    () => next({ action: 'APPROVE', actor: 'SILVA', current: 'DRAFT' }),
+    (e: WorkflowError) => e.code === 'INVALID_TRANSITION',
+  );
+  assert.throws(
+    () => next({ action: 'PAUSE', actor: 'SILVA', current: 'REJECTED' }),
+    (e: WorkflowError) => e.code === 'INVALID_TRANSITION',
+  );
+  assert.throws(
+    () => next({ action: 'CANCEL', actor: 'SILVA', current: 'COMPLETED' }),
+    (e: WorkflowError) => e.code === 'INVALID_TRANSITION',
+  );
 });
 
 test('ended campaigns cannot be submitted or approved', () => {
   const late = new Date('2026-08-01T00:00:00Z');
-  assert.throws(() => next({ action: 'SUBMIT', actor: 'OWNER', current: 'DRAFT', now: late }), (e: WorkflowError) => e.code === 'CAMPAIGN_ENDED');
-  assert.throws(() => next({ action: 'APPROVE', actor: 'SILVA', current: 'SUBMITTED', now: late }), (e: WorkflowError) => e.code === 'CAMPAIGN_ENDED');
+  assert.throws(
+    () => next({ action: 'SUBMIT', actor: 'OWNER', current: 'DRAFT', now: late }),
+    (e: WorkflowError) => e.code === 'CAMPAIGN_ENDED',
+  );
+  assert.throws(
+    () => next({ action: 'APPROVE', actor: 'SILVA', current: 'SUBMITTED', now: late }),
+    (e: WorkflowError) => e.code === 'CAMPAIGN_ENDED',
+  );
 });
 
 test('system tick advances scheduled → active → completed', () => {

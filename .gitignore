@@ -8,3 +8,8 @@ coverage/
 playwright-report/
 test-results/
 *.log
+tests/e2e/.results/
+tests/e2e/.fixtures/
+tests/e2e/.storage/
+apps/web/dist/
+apps/tv-player/dist/

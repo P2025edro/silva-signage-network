@@ -1,77 +1,90 @@
-# Silva Signage Network — Architecture
+# Architecture
 
-Owner: Silva Solutions Ltd, Dublin. Status: Milestone 1 in progress (see `docs/STATUS.md`).
+Silva Signage Network — Silva Solutions Ltd, Dublin. Milestone 1 (see `STATUS.md`).
 
 ## 1. System overview
 
 ```
- Business owner / staff ──► Web app (React)  ──┐
- Silva admin / operator ──► /admin routes      │  HTTPS, session cookie
-                                               ▼
-                                         API (Fastify, Node 22)
- Smart TV browser ──► TV player (vanilla TS) ──► /device/* (bearer device token)
-                                               │
-              ┌────────────────────────────────┼───────────────────────┐
-              ▼                                ▼                       ▼
-        PostgreSQL 16                  Object storage (S3)       Workers (same codebase,
-  (tenants, campaigns, playlists,      media + thumbnails,       separate process):
-   playback events, audit)             signed delivery URLs      scheduler, monitor
+ Business owner / staff ─┐
+                         ├─► Web app (React, apps/web) ──► /api/*  (session cookie, CSRF origin check)
+ Silva admin / operator ─┘          /admin/*  /portal/*            │
+                                                                  ▼
+ Smart TV browser ──► TV player (vanilla TS, apps/tv-player) ──► /api/device/*  (per-screen bearer token)
+                                                                  │
+                                          API (Fastify, Node 22, apps/api)
+                         ┌────────────────────────┼─────────────────────────┐
+                         ▼                        ▼                         ▼
+                 PostgreSQL 16            Object storage             Worker process
+          (tenants, campaigns,         (local disk in dev,      (campaign scheduler, playlist
+           playlists, events, audit)    S3-compatible in prod;    refresh, retention) — same
+                                        signed URLs only)         codebase, src/worker.ts
 ```
 
-The **distribution engine** (`packages/shared/src/engine`) is pure TypeScript with no I/O. The API loads a snapshot (screen context + candidate campaigns), the engine decides, the API persists versioned playlists. This keeps the core business logic deterministic and unit-testable.
+The **distribution engine** (`packages/shared/src/engine`) is pure TypeScript: no I/O, clock or randomness. The API loads a snapshot (screen contexts + candidate campaigns), the engine decides, the API persists versioned playlists. Core business rules are therefore deterministic and unit-tested in isolation.
 
-## 2. Technology decisions
+## 2. Repository layout
 
-| Area | Choice | Why |
+```
+apps/api            Fastify API, workers, seed script, integration tests (node:test)
+apps/web            React admin dashboard (/admin) and client portal (/portal)
+apps/tv-player      Dependency-free Smart TV player (esbuild → 14 KB script)
+packages/database   SQL migrations, migration runner, DB constraint tests
+packages/shared     Distribution engine, campaign workflow, shared types, unit tests
+tests/e2e           Playwright end-to-end test across web app, API and player
+docs/               This documentation
+```
+
+Deviations from the brief's suggested layout, and why:
+
+- **`admin-web` + `client-portal` → one app, `apps/web`.** Same components, one auth flow, one deployment. The API enforces every permission, so the split is presentation only and can be done later mechanically.
+- **`packages/ui`, `packages/config` → not created.** One UI consumer today; components live in `apps/web/src/components`. Shared TS config is `tsconfig.base.json`.
+- **`workers/*` → `apps/api/src/workers`.** Workers share the API's data access. They run as a **separate process** in production (`pnpm --filter @silva/api worker`), because serverless functions are not suitable for schedulers.
+
+## 3. Technology decisions
+
+| Area | Choice | Reason |
 |---|---|---|
-| API framework | **Fastify** (over NestJS) | Small surface, first-class schema validation and OpenAPI generation, low overhead for high-frequency device heartbeats. NestJS's DI/module layer adds ceremony a team of this size doesn't need yet. |
-| Database access | **Hand-written SQL migrations** + typed query layer (Drizzle ORM planned for queries) | Migrations stay reviewable SQL with DB-level guarantees (triggers, partial unique indexes, CHECKs) that ORMs express poorly. Runner: `packages/database/scripts/migrate.sh` (checksummed, transactional, refuses edited migrations). |
-| Tests | **node:test** via `tsx` | Built into Node; no framework lock-in. Playwright for browser E2E. |
-| Web app | React + Vite + Tailwind + TanStack Query + React Hook Form + Zod | As specified. |
-| TV player | **Vanilla TypeScript**, bundled with esbuild, no framework | TV browsers (Tizen, webOS) are memory-constrained and often run older engines. A dependency-free player is smaller and easier to make compatible. |
-| Storage | S3-compatible driver + local-disk driver for development | Same interface; MinIO in docker-compose for S3 testing. |
+| API framework | **Fastify 5** (not NestJS) | Small surface, schema-first validation, OpenAPI generation, low overhead for frequent device heartbeats. NestJS's DI/module layer adds ceremony a small team doesn't need yet. |
+| Validation / OpenAPI | Zod 4 + `fastify-type-provider-zod` | One schema validates requests, types handlers, and generates `/api/docs`. |
+| Database access | **Hand-written SQL migrations + `postgres` (postgres.js) tagged queries** — no ORM | The brief offered Prisma or Drizzle. We chose plain SQL because the schema relies on things ORMs express poorly (partial unique indexes, triggers enforcing tenant consistency and append-only audit logs, CHECKs). postgres.js parameterises every interpolation, so queries are injection-safe. Adding Drizzle later for typed queries is possible without changing the schema. |
+| Passwords | scrypt (N=2¹⁷, r=8, p=1) via Node crypto | OWASP-recommended parameters, no native dependency. |
+| MFA | TOTP (RFC 6238), secrets AES-256-GCM encrypted at rest | Works with standard authenticator apps. |
+| Media | sharp (images), ffprobe/ffmpeg (video) | Re-encode everything for delivery: strips metadata, normalises to 1080p JPEG / H.264. |
+| Web app | React 19, Vite, Tailwind 4, TanStack Query, React Hook Form, Zod | As specified. shadcn/ui-style components are written in-repo (`components/ui`). |
+| TV player | Vanilla TypeScript, esbuild, target Chromium 53 | TV browsers are memory-constrained and old. No framework, no polyfill-heavy APIs. |
+| Tests | node:test (unit + integration), Playwright (E2E) | Built into Node; real Postgres for integration. |
 
-### Structure refinements vs. the brief
+## 4. Tenancy and access control
 
-- `apps/admin-web` and `apps/client-portal` → **one app, `apps/web`**, with `/admin/*` and `/portal/*` route trees. Same components, one auth flow, one deploy. Access is enforced by the API, not the routing; splitting into two deploys later is mechanical.
-- `packages/ui` → components live in `apps/web/src/components/ui` while there is a single consumer.
-- `workers/*` → `apps/api/src/workers/*` with a separate entry point (`node dist/worker.js`). They share the API's database code; they run as a separate process in production because Vercel serverless is not suitable for long-running schedulers.
+- Every tenant-owned row carries `company_id`. Company routes are `/api/companies/:companyId/...`; `requireCompany()` checks membership **and** every query filters by `company_id`, so an ID from another tenant is "not found" (404, never 403, so IDs can't be probed).
+- Database triggers add a second line: a screen's company must match its location's company.
+- Roles: platform `SUPER_ADMIN` / `NETWORK_OPERATOR`; company `OWNER` / `STAFF`.
 
-## 3. Tenancy and access control
+| Capability | Super admin | Operator | Owner | Staff |
+|---|---|---|---|---|
+| Companies, plans, manual subscriptions, settings, audit log | ✓ | — | — | — |
+| Review / approve / pause campaigns, screen commands | ✓ | ✓ | — | — |
+| View any company's data | ✓ | ✓ (read-only) | own | own |
+| Submit, pause, cancel own campaigns; pair/unpair screens; locations; team; billing | ✓ | — | ✓ | — |
+| Create/edit draft campaigns, upload media | ✓ | — | ✓ | ✓ |
 
-- Every tenant-owned table has `company_id`. API handlers resolve the caller's memberships from the session and **scope every query by company** server-side; IDs from the client are never trusted on their own.
-- Platform roles: `SUPER_ADMIN`, `NETWORK_OPERATOR`. Company roles: `OWNER`, `STAFF`.
-  - Operators: review campaigns, monitor screens, manage media — no billing configuration, plans or platform settings.
-  - Staff: view company data, create/edit draft campaigns, upload media. Owners additionally submit campaigns, pair screens, manage locations, users and billing.
-- Super admins must complete TOTP MFA per session. `ALLOW_ADMIN_WITHOUT_MFA` exists only for local development.
-- Devices authenticate with a per-screen bearer token (stored as SHA-256 hash), scoped to that screen's playlist, media and commands. Unpairing revokes it.
+- Super admins must complete TOTP each session; `ALLOW_ADMIN_WITHOUT_MFA` exists only for local development and is refused when `NODE_ENV=production`.
+- Devices authenticate with a per-screen bearer token (SHA-256 hashed at rest). It reaches only that screen's config, playlist, signed media and commands. Unpairing revokes it.
 
-## 4. Device pairing
+## 5. Device pairing
 
-1. Unpaired player calls `POST /device/pairing-sessions` → receives a session id, a one-time **poll secret**, and an 8-character code (`XXXX-XXXX`, unambiguous alphabet, ~1.3×10¹² combinations) valid for 10 minutes.
-2. An authorised user enters the code in the portal and chooses the establishment. The API checks role, company ownership of the location, and `max_screens` entitlement, then creates the screen inside a transaction.
-3. The player polls with its poll secret. On the first poll after claim, it receives the device token once (status → `DELIVERED`). Codes are stored as HMAC hashes, single-use, rate-limited per user and IP.
+1. Unpaired player → `POST /api/device/pairing-sessions` → session id, one-time **poll secret**, 8-character code (`XXXX-XXXX`, 31-letter unambiguous alphabet ≈ 8.5×10¹¹ codes), valid 10 minutes.
+2. An owner enters the code in the portal and picks the establishment. In one transaction the API checks role, location ownership, active subscription and `max_screens`, creates the screen and claims the session.
+3. The player's next poll (authenticated by the poll secret) receives the device token exactly once (`DELIVERED`). Codes are stored as HMAC hashes, single-use, rate-limited (10/min per IP), and a code can't be live twice.
 
-## 5. Distribution engine
+## 6. Distribution
 
-See `docs/CAMPAIGN_ENGINE.md` for the full policy. In short: eligibility (state, dates, Dublin-local schedule, subscription, quota, own-screen policy, zones, venue categories, host competition rules, media compatibility) → selection (least-delivered first) → proportional allocation (Sainte-Laguë on plan weight × priority) with an anti-monopoly cap → even interleaving. Playlists are versioned per screen and regenerated on campaign changes and at every quarter hour.
+See `CAMPAIGN_ENGINE.md`. Playlists are regenerated: on campaign actions, rule/plan/subscription/settings changes, by the scheduler when a playlist's `validUntil` passes (at most every quarter hour), and on demand when a device fetches an expired playlist.
 
-## 6. Time handling
+## 7. Time
 
-All timestamps are stored as `timestamptz` (UTC). Schedules and opening hours are evaluated in `Europe/Dublin` via the IANA database (`Intl`), so daylight-saving changes are handled; tests cover both transition nights. Schedule edges are restricted to 15-minute steps, matching playlist regeneration.
+All timestamps are `timestamptz` (UTC). Schedules and opening hours are evaluated in the location's time zone (default `Europe/Dublin`) via the IANA database; tests cover both daylight-saving transition nights. Schedule edges are in 15-minute steps, aligned with playlist regeneration.
 
-## 7. Offline behaviour (player)
+## 8. Scaling path
 
-The player caches the latest playlist and media (Cache Storage / IndexedDB where available) and queues playback events in IndexedDB. Cached content is bounded: each item carries `notAfter` (campaign end), and a cached playlist is only used for `devices.offline_cache_max_hours` (24 h default) after its last successful sync. Pause/revocation takes effect on the next successful sync; it cannot reach a TV that is offline. Real-device behaviour must be verified per model (see `KNOWN_LIMITATIONS.md`).
-
-## 8. Implementation plan
-
-| Phase | Scope | State |
-|---|---|---|
-| 1 Foundation | Monorepo, schema, auth, roles, tenancy, admin dashboard, companies, establishments | Schema done and tested; app layer blocked (see STATUS) |
-| 2 TV player | Player, pairing, device auth, heartbeats, playback, monitoring | Designed; not started |
-| 3 Campaigns | Media upload + validation, campaigns, approval workflow, scheduling, targeting | Workflow state machine done and tested |
-| 4 Network | Eligibility, cross-business distribution, allocation, playback tracking, quotas, exclusions | Engine done and tested; persistence pending |
-| 5 Subscriptions | Plans, entitlements, Stripe Checkout, webhooks | Plans/entitlements in schema |
-| 6 Analytics | Reports, health, CSV | Not started |
-| 7 Production prep | Security review, perf, deploy, monitoring, TV compatibility testing | Not started |
+The MVP regenerates all playlists in one pass (fine for hundreds of screens). For thousands: regenerate only screens affected by a change (zone/category index), shard the scheduler by screen id, move playback ingestion to a queue, and partition `playback_events` by month. The engine's pure interface does not change.

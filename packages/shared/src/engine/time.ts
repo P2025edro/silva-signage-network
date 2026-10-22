@@ -58,9 +58,7 @@ export function parseHHMM(value: string): number {
 export function isWithinSchedule(schedule: WeeklySchedule | null, instant: Date, timeZone: string): boolean {
   if (!schedule) return true;
   const { isoWeekday, minuteOfDay } = localParts(instant, timeZone);
-  return (
-    schedule.days.includes(isoWeekday) && minuteOfDay >= schedule.startMinute && minuteOfDay < schedule.endMinute
-  );
+  return schedule.days.includes(isoWeekday) && minuteOfDay >= schedule.startMinute && minuteOfDay < schedule.endMinute;
 }
 
 /**
@@ -119,7 +117,10 @@ export function validateSchedule(schedule: WeeklySchedule): string[] {
   if (schedule.days.length === 0) errors.push('At least one day is required');
   if (schedule.days.some((d) => !Number.isInteger(d) || d < 1 || d > 7)) errors.push('Days must be 1 (Mon) to 7 (Sun)');
   if (new Set(schedule.days).size !== schedule.days.length) errors.push('Days must not repeat');
-  for (const [name, v] of [['startMinute', schedule.startMinute], ['endMinute', schedule.endMinute]] as const) {
+  for (const [name, v] of [
+    ['startMinute', schedule.startMinute],
+    ['endMinute', schedule.endMinute],
+  ] as const) {
     if (!Number.isInteger(v) || v < 0 || v > 1440 || v % 15 !== 0) errors.push(`${name} must be a multiple of 15 between 0 and 1440`);
   }
   if (schedule.endMinute <= schedule.startMinute) errors.push('endMinute must be after startMinute');

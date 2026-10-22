@@ -1,0 +1,8 @@
+{
+  "name": "@silva/database",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "migrate": "bash scripts/migrate.sh"
+  }
+}
