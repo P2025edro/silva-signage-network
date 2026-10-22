@@ -1,0 +1,16 @@
+{
+  "name": "silva-signage-network",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Silva Signage Network — indoor DOOH advertising network by Silva Solutions Ltd",
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "db:migrate": "bash packages/database/scripts/migrate.sh",
+    "db:migrate:test": "DATABASE_URL=$TEST_DATABASE_URL bash packages/database/scripts/migrate.sh",
+    "test:unit": "tsx --test packages/shared/test/*.test.ts",
+    "typecheck": "tsc -p packages/shared/tsconfig.json --noEmit"
+  }
+}
