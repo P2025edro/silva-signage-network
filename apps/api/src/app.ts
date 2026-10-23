@@ -17,6 +17,7 @@ import { billingRoutes } from './routes/billing.js';
 import { campaignRoutes } from './routes/campaigns.js';
 import { companyRoutes } from './routes/companies.js';
 import { deviceRoutes } from './routes/device.js';
+import { leadRoutes } from './routes/leads.js';
 import { locationRoutes } from './routes/locations.js';
 import { mediaRoutes } from './routes/media.js';
 import { networkRoutes } from './routes/network.js';
@@ -102,5 +103,6 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(networkRoutes);
   await app.register(billingRoutes);
   await app.register(adminRoutes);
+  await app.register(leadRoutes);
   return app;
 }

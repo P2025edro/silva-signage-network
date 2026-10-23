@@ -5,6 +5,7 @@ import {
   Building2,
   CreditCard,
   FileClock,
+  Inbox,
   Layers,
   LayoutDashboard,
   Map,
@@ -27,6 +28,12 @@ export function AdminLayout() {
     refetchInterval: 60_000,
   });
   const count = pending.data?.total ?? 0;
+  const leads = useQuery({
+    queryKey: ['admin', 'leads', 'NEW'],
+    queryFn: () => api.get<unknown[]>('/api/admin/leads?status=NEW'),
+    refetchInterval: 60_000,
+  });
+  const newLeads = leads.data?.length ?? 0;
   return (
     <AppShell
       subtitle={superAdmin ? 'Silva admin' : 'Network operations'}
@@ -50,6 +57,12 @@ export function AdminLayout() {
         {
           group: 'Business',
           items: [
+            {
+              to: '/admin/leads',
+              label: 'Enquiries',
+              icon: Inbox,
+              badge: newLeads > 0 ? <span className="tabular rounded-full bg-accent px-1.5 text-[11px] font-semibold text-accent-ink">{newLeads}</span> : undefined,
+            },
             ...(superAdmin
               ? [
                   { to: '/admin/subscriptions', label: 'Subscriptions', icon: CreditCard },

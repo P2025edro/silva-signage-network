@@ -78,7 +78,7 @@ export async function resetDatabase(sql: Sql) {
     location_advertiser_exclusions, screens, device_pairing_sessions, device_credentials, screen_heartbeats, screen_commands,
     subscriptions, billing_events, media_assets, campaigns, campaign_reviews, campaign_media, campaign_targeting,
     campaign_target_categories, campaign_exclusions, screen_playlists, playlist_items, delivery_allocations, playback_events,
-    audit_logs, notifications CASCADE`;
+    audit_logs, notifications, leads CASCADE`;
   for (const [key, value] of Object.entries(SETTING_DEFAULTS)) {
     await sql`UPDATE platform_settings SET value = ${sql.json(value)} WHERE key = ${key}`;
   }

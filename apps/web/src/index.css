@@ -1,12 +1,15 @@
 @import '@fontsource-variable/inter';
+@import '@fontsource/archivo/latin-700.css';
+@import '@fontsource/archivo/latin-800.css';
 @import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Silva Signage Network — design tokens.
-   Neutral "ink" surfaces with a single deep-green accent. Status colours are reserved for status. */
+/* Silva Signage Network — design tokens, from the Silva Solutions Ltd logo:
+   navy-black ink with Silva blue as the single accent. Status colours are reserved for status. */
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Archivo', 'Inter Variable', ui-sans-serif, sans-serif;
 
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
@@ -24,36 +27,36 @@
 }
 
 :root {
-  --canvas: #f6f7f6;
+  --canvas: #f5f7fa;
   --surface: #ffffff;
-  --subtle: #f0f2f1;
-  --line: #e2e6e4;
-  --ink: #111816;
-  --muted: #5b6662;
-  --accent: #0f5c46;
+  --subtle: #eef2f6;
+  --line: #dde3ea;
+  --ink: #0c1218;
+  --muted: #566475;
+  --accent: #1161b9;
   --accent-ink: #ffffff;
-  --accent-soft: #e3f1ec;
+  --accent-soft: #e6f0fb;
   --ok: #15803d;
   --warn: #b45309;
   --bad: #b91c1c;
-  --info: #1d4ed8;
+  --info: #0e7490;
   color-scheme: light;
 }
 
 .dark {
-  --canvas: #0b100e;
-  --surface: #111816;
-  --subtle: #18201d;
-  --line: #26302c;
-  --ink: #e8eeeb;
-  --muted: #94a19c;
-  --accent: #5fd3a6;
-  --accent-ink: #062018;
-  --accent-soft: #11291f;
+  --canvas: #0b1016;
+  --surface: #111821;
+  --subtle: #18212c;
+  --line: #26323f;
+  --ink: #e8eef5;
+  --muted: #94a3b4;
+  --accent: #4a9bea;
+  --accent-ink: #04121f;
+  --accent-soft: #0f2235;
   --ok: #4ade80;
   --warn: #fbbf24;
   --bad: #f87171;
-  --info: #93c5fd;
+  --info: #67e8f9;
   color-scheme: dark;
 }
 

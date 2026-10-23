@@ -40,6 +40,7 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
         (SELECT count(*)::int FROM subscriptions WHERE status IN ('ACTIVE','TRIALING') AND current_period_end > ${now} AND source = 'STRIPE') AS "paidSubscriptions",
         (SELECT count(*)::int FROM campaigns WHERE deleted_at IS NULL AND status = 'ACTIVE') AS "activeCampaigns",
         (SELECT count(*)::int FROM campaigns WHERE deleted_at IS NULL AND status IN ('SUBMITTED','UNDER_REVIEW')) AS "pendingCampaigns",
+        (SELECT count(*)::int FROM leads WHERE status = 'NEW') AS "newLeads",
         (SELECT count(*)::int FROM playback_events WHERE type = 'STARTED' AND occurred_at > ${new Date(now.getTime() - 86_400_000)}) AS "playbackStarts24h",
         (SELECT count(*)::int FROM playback_events WHERE type = 'FAILED' AND occurred_at > ${new Date(now.getTime() - 86_400_000)}) AS "playbackFailures24h",
         -- Verified revenue: only Stripe-confirmed subscriptions and paid invoices count.

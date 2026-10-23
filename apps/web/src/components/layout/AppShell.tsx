@@ -26,15 +26,11 @@ export function useTheme() {
 
 export function Logo({ subtitle }: { subtitle?: string }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <svg viewBox="0 0 32 32" className="size-7 shrink-0" aria-hidden>
-        <rect width="32" height="32" rx="7" className="fill-accent" />
-        <rect x="7" y="9" width="18" height="11" rx="1.5" fill="none" className="stroke-accent-ink" strokeWidth="2" />
-        <path d="M13 24h6" className="stroke-accent-ink" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-      <div className="leading-tight">
-        <div className="text-[13px] font-semibold">Silva Signage Network</div>
-        {subtitle && <div className="text-[11px] text-muted">{subtitle}</div>}
+    <div className="flex flex-col gap-1">
+      <img src="/brand/silva-logo.png" alt="Silva Solutions Ltd" className="h-8 w-auto self-start dark:hidden" />
+      <img src="/brand/silva-logo-white.png" alt="Silva Solutions Ltd" className="hidden h-8 w-auto self-start dark:block" />
+      <div className="text-[11px] font-semibold tracking-[0.14em] text-accent uppercase">
+        Signage Network{subtitle ? <span className="font-normal tracking-normal text-muted normal-case"> · {subtitle}</span> : null}
       </div>
     </div>
   );

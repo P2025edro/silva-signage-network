@@ -19,6 +19,8 @@ import {
 import { PortalLayout } from './pages/portal/PortalLayout';
 import { PortalBilling, PortalCampaigns, PortalEstablishments, PortalMedia, PortalOverview, PortalSettings, PortalTeam } from './pages/portal/PortalPages';
 import { CampaignEditor, PortalCampaignDetail, PortalReports } from './pages/portal/CampaignPages';
+import { AdminLeads } from './pages/admin/AdminLeads';
+import { LandingPage, PrivacyPage } from './pages/public/Landing';
 
 function Home() {
   const { data: me, isLoading } = useMe();
@@ -31,7 +33,7 @@ function NotFound() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-3 text-center">
       <h1 className="text-lg font-semibold">Page not found</h1>
-      <Link to="/" className="text-sm text-accent hover:underline">
+      <Link to="/app" className="text-sm text-accent hover:underline">
         Go to your dashboard
       </Link>
     </div>
@@ -39,7 +41,9 @@ function NotFound() {
 }
 
 export const router = createBrowserRouter([
-  { path: '/', element: <Home /> },
+  { path: '/', element: <LandingPage /> },
+  { path: '/app', element: <Home /> },
+  { path: '/privacy', element: <PrivacyPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/mfa', element: <MfaVerifyPage /> },
   { path: '/mfa/setup', element: <MfaSetupPage /> },
@@ -66,6 +70,7 @@ export const router = createBrowserRouter([
       { path: 'alerts', element: <AdminAlerts /> },
       { path: 'audit', element: <AdminAudit /> },
       { path: 'settings', element: <AdminSettings /> },
+      { path: 'leads', element: <AdminLeads /> },
     ],
   },
   {
