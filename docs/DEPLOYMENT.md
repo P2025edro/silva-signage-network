@@ -55,3 +55,40 @@ STRIPE_WEBHOOK_SECRET=whsec_…
 - Managed Postgres PITR (7+ days) and a nightly logical dump kept 30 days in a different provider/region.
 - Object storage versioning on the media bucket.
 - Restore drill before launch: restore a dump into a scratch database, run `pnpm test:db` against it, and point a staging API at it.
+
+## Online demo on Vercel
+
+A single Vercel project serves everything from one origin, built by `node scripts/vercel-build.mjs`
+(Build Output API):
+
+| Path | What |
+| --- | --- |
+| `/` | Landing page with the enquiry form; `/login`, `/app`, `/admin` for the portal and admin |
+| `/player/` | Smart TV web player (open this address in the TV's browser) |
+| `/api/*` | The Fastify API as one Node.js function (region `dub1`) |
+
+The build also applies pending migrations (`apps/api/src/scripts/migrate.ts`, same checksums as
+`migrate.sh`) and runs the seed: the first admin from `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD`, plus
+two fictional businesses labelled `DEMO —` when `DEMO_MODE=true`.
+
+Project settings: framework *Other*, install `pnpm install --frozen-lockfile`, build
+`node scripts/vercel-build.mjs`, Node 22. Environment (Production):
+
+```
+NODE_ENV=production
+DATABASE_URL=...            # Neon via the Vercel marketplace (adds DATABASE_URL_UNPOOLED too)
+APP_SECRET=<random 48+ chars>
+API_PUBLIC_URL=https://<project domain>
+WEB_ORIGINS=https://<project domain>
+STORAGE_DRIVER=blob         # private Blob store connected to the project (BLOB_READ_WRITE_TOKEN)
+LAZY_WORKERS=true           # scheduler/maintenance driven by API traffic, no worker process
+DISABLE_VIDEO_UPLOADS=true  # no ffmpeg/ffprobe in Vercel functions
+MEDIA_MAX_IMAGE_BYTES=4000000  # function request bodies are limited to 4.5 MB; the portal shrinks bigger photos first
+DEMO_MODE=true              # demo banner + fictional DEMO businesses. Never set on a real production database.
+SEED_ADMIN_EMAIL=...  SEED_ADMIN_PASSWORD=...  DEMO_OWNER_PASSWORD=...
+```
+
+Differences from the container deployment: no video, image uploads up to 4 MB, scheduler ticks
+at most once a minute and only while something calls the API (a paired TV polls every minute).
+For real customers, use the container deployment above (with a worker process, ffmpeg and S3-compatible storage)
+or keep Vercel and add a video pipeline.

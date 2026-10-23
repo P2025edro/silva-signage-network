@@ -33,6 +33,12 @@
 - Device credential rotation is manual (unpair/re-pair); no scheduled rotation.
 - Retention policy for audit logs, playback events and billing events is not decided.
 
+## Online demo (Vercel)
+
+- Video uploads are switched off (no ffmpeg in Vercel functions); images only, up to 4 MB per request (bigger photos are shrunk in the browser first).
+- Scheduling runs from API traffic rather than a worker process: campaign start/end can lag by up to a minute or two when no TV is polling.
+- The demo uses its own database with fictional `DEMO —` businesses. It is not the production system and takes no payments.
+
 ## Development environment notes
 
 - Built and tested on Node 22, PostgreSQL 16, ffmpeg 6+, Chromium 141 (Playwright).
