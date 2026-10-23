@@ -6,6 +6,9 @@ import { promisify } from 'node:util';
 import sharp from 'sharp';
 
 const run = promisify(execFile);
+/** Binaries can be supplied by path (e.g. bundled static builds on serverless hosts). */
+const FFMPEG = () => process.env.FFMPEG_PATH || 'ffmpeg';
+const FFPROBE = () => process.env.FFPROBE_PATH || 'ffprobe';
 
 export type DetectedType = { kind: 'IMAGE'; mime: 'image/jpeg' | 'image/png' | 'image/webp' } | { kind: 'VIDEO'; mime: 'video/mp4' };
 
@@ -104,7 +107,7 @@ interface ProbeResult {
 }
 
 async function probe(path: string): Promise<ProbeResult> {
-  const { stdout } = await run('ffprobe', ['-v', 'error', '-print_format', 'json', '-show_streams', '-show_format', path], {
+  const { stdout } = await run(FFPROBE(), ['-v', 'error', '-print_format', 'json', '-show_streams', '-show_format', path], {
     timeout: 30_000,
   });
   return JSON.parse(stdout) as ProbeResult;
@@ -149,7 +152,7 @@ async function processVideo(buf: Buffer, limits: MediaLimits): Promise<Processed
     if (!isDeliveryReady(info)) {
       output = join(dir, 'delivery.mp4');
       await run(
-        'ffmpeg',
+        FFMPEG(),
         [
           '-v',
           'error',
@@ -186,7 +189,7 @@ async function processVideo(buf: Buffer, limits: MediaLimits): Promise<Processed
     const fv = finalInfo.streams.find((s) => s.codec_type === 'video')!;
     const thumbPath = join(dir, 'thumb.jpg');
     await run(
-      'ffmpeg',
+      FFMPEG(),
       ['-v', 'error', '-y', '-ss', String(Math.min(1, durationMs / 2000)), '-i', output, '-frames:v', '1', '-vf', 'scale=480:-2', thumbPath],
       {
         timeout: 60_000,

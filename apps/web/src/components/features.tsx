@@ -489,7 +489,12 @@ export function MediaUploadButton({ base, onUploaded }: { base: string; onUpload
   const env = useEnvInfo();
   const video = env.data?.videoUploads !== false;
   const up = useMutation({
-    mutationFn: async (file: File) => api.upload<Media>(`${base}/media`, env.data?.maxImageBytes ? await fitImage(file, env.data.maxImageBytes) : file),
+    mutationFn: async (file: File) => {
+      const maxVideo = env.data?.maxVideoBytes;
+      if (file.type.startsWith('video/') && maxVideo && file.size > maxVideo)
+        throw new Error(`This video is ${(file.size / 1048576).toFixed(1)} MB. The limit here is ${(maxVideo / 1048576).toFixed(0)} MB — export a shorter or smaller H.264 MP4.`);
+      return api.upload<Media>(`${base}/media`, env.data?.maxImageBytes ? await fitImage(file, env.data.maxImageBytes) : file);
+    },
     onSuccess: (m) => {
       qc.invalidateQueries({ queryKey: ['media'] });
       toast.ok('Upload processed and ready');

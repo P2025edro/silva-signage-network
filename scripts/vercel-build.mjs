@@ -5,7 +5,7 @@
 // Then applies pending migrations and the first admin (+ demo businesses when DEMO_MODE=true).
 // Run by Vercel as the project's build command; can also be run locally to inspect the output.
 import { execSync } from 'node:child_process';
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as esbuild from 'esbuild';
 
@@ -38,8 +38,19 @@ await esbuild.build({
   logLevel: 'warning',
 });
 const sharpVersion = JSON.parse(readFileSync('apps/api/node_modules/sharp/package.json', 'utf8')).version;
-writeFileSync(join(fn, 'package.json'), JSON.stringify({ type: 'module', dependencies: { sharp: sharpVersion } }));
+// Static ffmpeg/ffprobe for validating video uploads (and thumbnails) inside the function.
+writeFileSync(
+  join(fn, 'package.json'),
+  JSON.stringify({
+    type: 'module',
+    dependencies: { sharp: sharpVersion, '@ffmpeg-installer/ffmpeg': '1.1.0', '@ffprobe-installer/ffprobe': '2.1.2' },
+  }),
+);
 sh(`npm install --omit=dev --no-audit --no-fund --no-package-lock --os=linux --cpu=x64 --libc=glibc --prefix "${fn}"`);
+// The function runs as a different user than the build: make the binaries executable for all.
+for (const bin of ['node_modules/@ffmpeg-installer/linux-x64/ffmpeg', 'node_modules/@ffprobe-installer/linux-x64/ffprobe']) {
+  if (existsSync(join(fn, bin))) chmodSync(join(fn, bin), 0o755);
+}
 writeFileSync(
   join(fn, '.vc-config.json'),
   JSON.stringify({ runtime: 'nodejs22.x', handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: false, supportsResponseStreaming: true, maxDuration: 60, memory: 1024, regions: [region] }),

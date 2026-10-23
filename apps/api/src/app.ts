@@ -99,6 +99,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
       demo: deps.config.DEMO_MODE,
       videoUploads: !deps.config.DISABLE_VIDEO_UPLOADS,
       maxImageBytes: deps.config.MEDIA_MAX_IMAGE_BYTES,
+      maxVideoBytes: deps.config.MEDIA_MAX_VIDEO_BYTES,
     };
   });
 

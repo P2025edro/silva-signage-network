@@ -5,6 +5,7 @@ export interface EnvInfo {
   demo?: boolean;
   videoUploads?: boolean;
   maxImageBytes?: number;
+  maxVideoBytes?: number;
 }
 
 /** What this deployment supports (demo banner, video, upload size). */
