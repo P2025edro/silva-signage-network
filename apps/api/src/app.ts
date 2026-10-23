@@ -23,6 +23,7 @@ import { mediaRoutes } from './routes/media.js';
 import { networkRoutes } from './routes/network.js';
 import { screenRoutes } from './routes/screens.js';
 import type { Deps } from './types.js';
+import { maintenanceTick, schedulerTick } from './workers/index.js';
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const app = Fastify({
@@ -88,9 +89,17 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
     return reply.status(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Something went wrong. It has been logged.' } });
   });
 
+  if (deps.config.LAZY_WORKERS) registerLazyWorkers(app, deps);
+
   app.get('/api/health', async () => {
     await deps.sql`SELECT 1`;
-    return { ok: true, time: deps.now().toISOString() };
+    return {
+      ok: true,
+      time: deps.now().toISOString(),
+      demo: deps.config.DEMO_MODE,
+      videoUploads: !deps.config.DISABLE_VIDEO_UPLOADS,
+      maxImageBytes: deps.config.MEDIA_MAX_IMAGE_BYTES,
+    };
   });
 
   await app.register(authRoutes);
@@ -105,4 +114,31 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(adminRoutes);
   await app.register(leadRoutes);
   return app;
+}
+
+/**
+ * Serverless hosts have no long-running worker process. Instead, API traffic (TVs poll every
+ * minute or so) drives the same ticks the worker would run: at most once a minute per instance for the
+ * scheduler and once an hour for maintenance. The ticks take Postgres advisory locks, so concurrent
+ * instances never run them twice at the same time.
+ */
+function registerLazyWorkers(app: FastifyInstance, deps: Deps) {
+  let lastScheduler = 0;
+  let lastMaintenance = 0;
+  app.addHook('onRequest', async (req) => {
+    if (!req.url.startsWith('/api/') || req.url.startsWith('/api/media-files/')) return;
+    const now = Date.now();
+    try {
+      if (now - lastScheduler >= 60_000) {
+        lastScheduler = now;
+        await schedulerTick(deps);
+      }
+      if (now - lastMaintenance >= 3_600_000) {
+        lastMaintenance = now;
+        await maintenanceTick(deps);
+      }
+    } catch (err) {
+      req.log.error({ err }, 'Background tick failed');
+    }
+  });
 }

@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { LogOut, Menu, Moon, Sun, X } from 'lucide-react';
 import { useMe, useSignOut } from '@/lib/auth';
 import { cn } from '@/lib/cn';
+import { useEnvInfo } from '@/lib/env';
 
 export interface NavItem {
   to: string;
@@ -40,6 +41,7 @@ export function AppShell({ nav, subtitle, header }: { nav: Array<{ group?: strin
   const { data: me } = useMe();
   const signOut = useSignOut();
   const { dark, toggle } = useTheme();
+  const env = useEnvInfo();
   const [open, setOpen] = useState(false);
   const loc = useLocation();
   useEffect(() => setOpen(false), [loc.pathname]);
@@ -120,6 +122,12 @@ export function AppShell({ nav, subtitle, header }: { nav: Array<{ group?: strin
       )}
       <main className="min-w-0 px-4 py-6 sm:px-8 sm:py-8">
         <div className="mx-auto max-w-6xl">
+          {env.data?.demo && (
+            <div className="mb-5 rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-[13px] text-ink">
+              <strong className="font-semibold">Demo environment.</strong> The businesses here are fictional and nothing is billed. Feel free to try
+              things out.
+            </div>
+          )}
           <Outlet />
         </div>
       </main>

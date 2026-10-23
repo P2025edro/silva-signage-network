@@ -1,3 +1,4 @@
+import { useEnvInfo } from '@/lib/env';
 import { Badge, type Tone } from './ui';
 
 const CAMPAIGN: Record<string, [Tone, string]> = {
@@ -48,11 +49,14 @@ export const SubscriptionStatus = ({ status, source }: { status: string | null |
     <Badge>None</Badge>
   );
 
-export const DevFixture = () => (
-  <Badge tone="warn" className="uppercase tracking-wide">
-    Dev fixture
-  </Badge>
-);
+export const DevFixture = () => {
+  const env = useEnvInfo();
+  return (
+    <Badge tone="warn" className="uppercase tracking-wide">
+      {env.data?.demo ? 'Demo' : 'Dev fixture'}
+    </Badge>
+  );
+};
 
 export const REASON_LABELS: Record<string, string> = {
   SCREEN_NOT_ACTIVE: 'Screen disabled',

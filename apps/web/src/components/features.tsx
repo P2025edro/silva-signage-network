@@ -2,11 +2,31 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Film, ImageIcon, Upload } from 'lucide-react';
 import { api, errorMessage, fieldErrors } from '@/lib/api';
+import { useEnvInfo } from '@/lib/env';
 import { fmtDateTime, fmtDuration } from '@/lib/format';
 import type { Location, Media, PlaylistView, Ref } from '@/lib/types';
 import { REASON_LABELS } from './status';
 import { useToast } from './toast';
 import { Badge, Button, Checkbox, Dialog, EmptyState, Field, Input, Notice, Select, Spinner, Table, Td, Th } from './ui';
+
+/**
+ * Large phone photos can exceed the host's request limit. Shrink them in the browser first;
+ * the server still validates and re-encodes everything it receives.
+ */
+async function fitImage(file: File, maxBytes: number): Promise<File> {
+  if (!file.type.startsWith('image/') || file.size <= maxBytes) return file;
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 3840 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  for (const q of [0.9, 0.8, 0.7]) {
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', q));
+    if (blob && blob.size <= maxBytes) return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+  }
+  return file;
+}
 
 export const useZones = () => useQuery({ queryKey: ['zones'], queryFn: () => api.get<Ref[]>('/api/zones'), staleTime: 300_000 });
 export const useCategories = () => useQuery({ queryKey: ['categories'], queryFn: () => api.get<Ref[]>('/api/categories'), staleTime: 300_000 });
@@ -466,8 +486,10 @@ export function MediaUploadButton({ base, onUploaded }: { base: string; onUpload
   const input = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
   const toast = useToast();
+  const env = useEnvInfo();
+  const video = env.data?.videoUploads !== false;
   const up = useMutation({
-    mutationFn: (file: File) => api.upload<Media>(`${base}/media`, file),
+    mutationFn: async (file: File) => api.upload<Media>(`${base}/media`, env.data?.maxImageBytes ? await fitImage(file, env.data.maxImageBytes) : file),
     onSuccess: (m) => {
       qc.invalidateQueries({ queryKey: ['media'] });
       toast.ok('Upload processed and ready');
@@ -480,7 +502,7 @@ export function MediaUploadButton({ base, onUploaded }: { base: string; onUpload
       <input
         ref={input}
         type="file"
-        accept="image/jpeg,image/png,image/webp,video/mp4"
+        accept={video ? 'image/jpeg,image/png,image/webp,video/mp4' : 'image/jpeg,image/png,image/webp'}
         hidden
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -489,19 +511,22 @@ export function MediaUploadButton({ base, onUploaded }: { base: string; onUpload
         }}
       />
       <Button variant="outline" onClick={() => input.current?.click()} loading={up.isPending}>
-        <Upload className="size-4" /> {up.isPending ? 'Processing…' : 'Upload image or video'}
+        <Upload className="size-4" /> {up.isPending ? 'Processing…' : video ? 'Upload image or video' : 'Upload image'}
       </Button>
     </>
   );
 }
 
 export function MediaLibrary({ base }: { base: string }) {
+  const env = useEnvInfo();
   const { data, isLoading } = useQuery({ queryKey: ['media', base], queryFn: () => api.get<Media[]>(`${base}/media`) });
   if (isLoading) return <Spinner />;
   if (!data?.length)
     return (
       <EmptyState icon={<ImageIcon className="size-6" />} title="No media yet" action={<MediaUploadButton base={base} />}>
-        JPEG, PNG, WebP or MP4. Images are fitted to 1080p; videos are converted to a TV-friendly format.
+        {env.data?.videoUploads === false
+          ? 'JPEG, PNG or WebP. Images are fitted to 1080p for TVs.'
+          : 'JPEG, PNG, WebP or MP4. Images are fitted to 1080p; videos are converted to a TV-friendly format.'}
       </EmptyState>
     );
   return (

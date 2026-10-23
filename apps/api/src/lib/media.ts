@@ -32,6 +32,7 @@ export interface MediaLimits {
   maxImageBytes: number;
   maxVideoBytes: number;
   maxVideoSeconds: number;
+  videoDisabled?: boolean;
 }
 
 /** Display constraints for 16:9 TVs. */
@@ -59,6 +60,7 @@ export interface ProcessedMedia {
 export async function processUpload(buf: Buffer, limits: MediaLimits): Promise<ProcessedMedia> {
   const type = sniffFileType(buf);
   if (!type) throw new MediaRejected('Unsupported file. Upload JPEG, PNG, WebP or MP4.');
+  if (type.kind === 'VIDEO' && limits.videoDisabled) throw new MediaRejected('Video uploads are not available in this environment yet. Please upload a JPEG, PNG or WebP image.');
   return type.kind === 'IMAGE' ? processImage(buf, type.mime, limits) : processVideo(buf, limits);
 }
 

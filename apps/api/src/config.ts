@@ -14,7 +14,9 @@ const EnvSchema = z.object({
   WEB_ORIGINS: z.string().default('http://localhost:5173,http://localhost:5174'),
   APP_SECRET: z.string().min(32, 'APP_SECRET must be at least 32 characters'),
   ALLOW_ADMIN_WITHOUT_MFA: bool,
-  STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+  STORAGE_DRIVER: z.enum(['local', 's3', 'blob']).default('local'),
+  /** Vercel Blob (private store). Set automatically when a Blob store is connected to the Vercel project. */
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
   STORAGE_LOCAL_DIR: z.string().default('./storage'),
   S3_ENDPOINT: z.string().optional(),
   S3_REGION: z.string().default('eu-west-1'),
@@ -35,6 +37,12 @@ const EnvSchema = z.object({
   /** log2 of scrypt N. 17 follows OWASP guidance; tests lower it for speed. */
   SCRYPT_LOG_N: z.coerce.number().int().min(10).max(20).default(17),
   RUN_WORKERS_IN_PROCESS: bool,
+  /** Serverless hosting: run scheduler/maintenance ticks from incoming requests instead of a worker process. */
+  LAZY_WORKERS: bool,
+  /** Hosts without ffmpeg/ffprobe (e.g. Vercel functions) cannot validate video; reject video uploads politely. */
+  DISABLE_VIDEO_UPLOADS: bool,
+  /** Public demo environment: shows a demo banner and allows clearly labelled fictional demo businesses. */
+  DEMO_MODE: bool,
   LOG_LEVEL: z.string().default('info'),
 });
 

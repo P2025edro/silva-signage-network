@@ -35,6 +35,7 @@ export const mediaRoutes: FastifyPluginAsync = async (app) => {
           maxImageBytes: deps.config.MEDIA_MAX_IMAGE_BYTES,
           maxVideoBytes: deps.config.MEDIA_MAX_VIDEO_BYTES,
           maxVideoSeconds: deps.config.MEDIA_MAX_VIDEO_SECONDS,
+          videoDisabled: deps.config.DISABLE_VIDEO_UPLOADS,
         });
       } catch (e) {
         if (e instanceof MediaRejected) throw new HttpError(422, 'MEDIA_REJECTED', e.message);
