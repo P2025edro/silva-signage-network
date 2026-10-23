@@ -6,12 +6,13 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import postgres from 'postgres';
+import { cleanDatabaseUrl } from '../db.js';
 
 const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 if (!url) throw new Error('DATABASE_URL must be set');
 const dir = process.env.MIGRATIONS_DIR ?? join(dirname(fileURLToPath(import.meta.url)), '../../../../packages/database/migrations');
 
-const sql = postgres(url, { max: 1, onnotice: () => {} });
+const sql = postgres(cleanDatabaseUrl(url), { max: 1, onnotice: () => {} });
 try {
   await sql`CREATE TABLE IF NOT EXISTS schema_migrations (
     name text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())`;

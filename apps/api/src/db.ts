@@ -5,7 +5,22 @@ export type Tx = postgres.TransactionSql;
 /** Either the pool or an open transaction. */
 export type Db = Sql | Tx;
 
-export function createSql(url: string): Sql {
+/**
+ * postgres.js forwards unknown URL parameters to the server as settings. Hosted Postgres URLs
+ * (e.g. Neon) carry client-only options such as channel_binding, which the server rejects.
+ */
+export function cleanDatabaseUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete('channel_binding');
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+export function createSql(rawUrl: string): Sql {
+  const url = cleanDatabaseUrl(rawUrl);
   // Serverless functions each hold their own pool; keep it small there. Connection poolers in
   // transaction mode (e.g. Neon's "-pooler" host) do not support named prepared statements.
   const serverless = Boolean(process.env.VERCEL);
