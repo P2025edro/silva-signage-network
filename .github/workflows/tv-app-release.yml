@@ -1,0 +1,33 @@
+# Publishes the Android TV app (built and signed by the Vercel deployment) as a GitHub Release.
+# Run it from the Actions tab ("Run workflow"), or push a tag like tv-v1.0.
+name: TV app release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version label (e.g. 1.0)
+        required: true
+        default: "1.0"
+  push:
+    tags: ["tv-v*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the signed APK from the live site
+        run: |
+          curl -fsSL -o silva-signage-tv.apk https://silva-signage.vercel.app/tv/silva-signage-tv.apk
+          unzip -l silva-signage-tv.apk | grep -q classes.dex
+          sha256sum silva-signage-tv.apk | tee silva-signage-tv.apk.sha256
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version || github.ref_name }}
+        run: |
+          TAG="tv-v${VERSION#tv-v}"
+          NOTES="Silva Signage player for Android TV / Google TV / Fire TV. Install on the TV with the Downloader app: silva-signage.vercel.app/tv"
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            && gh release upload "$TAG" silva-signage-tv.apk silva-signage-tv.apk.sha256 --clobber -R "$GITHUB_REPOSITORY" \
+            || gh release create "$TAG" silva-signage-tv.apk silva-signage-tv.apk.sha256 --title "Silva Signage TV app $TAG" --notes "$NOTES" --target "$GITHUB_SHA" -R "$GITHUB_REPOSITORY"
