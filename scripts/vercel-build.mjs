@@ -56,6 +56,15 @@ writeFileSync(
   JSON.stringify({ runtime: 'nodejs22.x', handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: false, supportsResponseStreaming: true, maxDuration: 60, memory: 1024, regions: [region] }),
 );
 
+// 2b. Android TV kiosk app, published at /tv/silva-signage-tv.apk. Optional: a failure here must not block the site.
+if (process.env.BUILD_TV_APK === 'true') {
+  try {
+    sh('bash apps/tv-android/build-apk.sh', { OUT: join(out, 'static/tv/silva-signage-tv.apk') });
+  } catch (e) {
+    console.warn('TV app build failed; deploying without it.', e.message);
+  }
+}
+
 // 3. Routing.
 writeFileSync(
   join(out, 'config.json'),
@@ -65,6 +74,8 @@ writeFileSync(
       routes: [
         { src: '^/assets/(.*)$', headers: { 'cache-control': 'public, max-age=31536000, immutable' }, continue: true },
         { src: '^/api(/.*)?$', dest: '/api' },
+        { src: '^/tv/?$', status: 302, headers: { Location: '/tv/silva-signage-tv.apk' } },
+        { src: '^/tv/silva-signage-tv\\.apk$', headers: { 'content-type': 'application/vnd.android.package-archive', 'cache-control': 'no-cache' }, continue: true },
         { handle: 'filesystem' },
         { src: '^/player/?$', dest: '/player/index.html' },
         { src: '^/player/.*$', status: 404, dest: '/player/index.html' },
