@@ -1,5 +1,5 @@
 # Publishes the Android TV app (built and signed by the Vercel deployment) as a GitHub Release.
-# Run it from the Actions tab ("Run workflow"), or push a tag like tv-v1.0.
+# Runs when a release tagged tv-v* is published, from the Actions tab ("Run workflow"), or on a tv-v* tag push.
 name: TV app release
 on:
   workflow_dispatch:
@@ -10,10 +10,13 @@ on:
         default: "1.0"
   push:
     tags: ["tv-v*"]
+  release:
+    types: [published]
 permissions:
   contents: write
 jobs:
   release:
+    if: github.event_name != 'release' || startsWith(github.event.release.tag_name, 'tv-v')
     runs-on: ubuntu-latest
     steps:
       - name: Download the signed APK from the live site
@@ -24,7 +27,7 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ inputs.version || github.ref_name }}
+          VERSION: ${{ github.event.release.tag_name || inputs.version || github.ref_name }}
         run: |
           TAG="tv-v${VERSION#tv-v}"
           NOTES="Silva Signage player for Android TV / Google TV / Fire TV. Install on the TV with the Downloader app: silva-signage.vercel.app/tv"
