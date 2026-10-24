@@ -50,3 +50,17 @@ Built for Chromium 53+ (Tizen 4+, webOS 4+) and modern Android TV browsers: esbu
 | Sony / TCL / Philips | | Android TV / Google TV | | ☐ | ☐ | ☐ | ☐ | |
 
 Test checklist per TV: pairing; image rotation for 1 hour; 1080p H.264 video; unplug network for 10 minutes (keeps playing, events sync after); pause a campaign (disappears within ~1 minute); unpair (returns to code); browser restart behaviour; overnight run (memory).
+
+## Android TV kiosk app (`apps/tv-android`)
+
+A small native shell around the web player for Android TV, Google TV and Fire TV devices (and Android TV boxes/sticks):
+
+- opens `https://silva-signage.vercel.app/player/` full screen, screen kept on, autoplay allowed;
+- starts by itself when the TV boots (`BOOT_COMPLETED`). On Android 10+ this needs "Display over other apps", which the app asks for once;
+- recovers on its own: retries every 15 s when offline, rebuilds the web engine if it crashes, reloads every 12 h;
+- Back is ignored (press it 5 times quickly to leave), Menu reloads the player;
+- pairing is kept in the WebView's storage, so the TV stays paired across restarts.
+
+Build: `bash apps/tv-android/build-apk.sh` (no Gradle; fetches a JDK and the Android SDK on first run). The Vercel build runs it when `BUILD_TV_APK=true` and publishes the result at `/tv/silva-signage-tv.apk` (`/tv` redirects there). It is signed with the release key in `TV_KEYSTORE_B64` / `TV_KEYSTORE_PASSWORD`; keep an offline copy of that key — Android only installs updates signed with the same key. Bump `versionCode` in `AndroidManifest.xml` for each release.
+
+Not yet verified on physical hardware. Samsung (Tizen) and LG (webOS) TVs can't install Android apps: use their built-in browser, or plug in a Fire TV Stick / Android TV box.
